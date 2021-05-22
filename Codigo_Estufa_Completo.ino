@@ -34,7 +34,7 @@ int pos=0; // Posição atual do Servo
 //--Variaveis para determinar a data, hora e estacao do ano atuais
 unsigned long esperaAtualizacao=0,minMil=60000;// mesMil=262800000,diaMil=86400000,horaMil=3600000,minMil=60000; //em milisegundos
 unsigned long esperaAtualizacaoVar=0,minMilVar=60000;//mesMilVar=262800000,diaMilVar=86400000,horaMilVar=3600000,minMilVar=60000; //em milisegundos
-int mes=5,dia=15,hora=15,minuto=33; 
+int mes=5,dia=20,hora=15,minuto=33; 
 int estacao_ano = 1;// (VERAO,OUTONO,INVERNO,PRIMAVERA)= (0,1,2,3)
 
 int RedLEDSIntensidades[] = {0,0,0};
@@ -118,14 +118,14 @@ String msg,cmd,valor_cmd,parametros_atuais = "";
     for(pos = posicaoAtual; pos < abertura; pos++)
     {
       motor.write(pos);
-      delay(25);// Movimenta a cada 25 ms --> abertura gradual
+      delay(10);// Movimenta a cada 10 ms --> abertura gradual
     }
   }
   else if (posicaoAtual > abertura){ // fechar escotilha até que a abertura seja = 'abertura'
     for(pos = posicaoAtual; pos >= abertura; pos--)
     {
       motor.write(pos);
-      delay(25); // Movimenta a cada 25 ms --> fechamento gradual
+      delay(10); // Movimenta a cada 10 ms --> fechamento gradual
     }
   }
  }
@@ -353,96 +353,123 @@ void loop()
   // LER MENSAGEM DO MONITOR SERIAL / APP ANDROID
   if (Serial.available() > 0){ // CHECA SE HÁ DADO DISPONÍVEL PARA SER LIDO
     
-    msg = Serial.readString(); // LÊ A MENSAGEM TODA COMO UMA ÚNICA STRING
+    msg += Serial.readString(); // LÊ A MENSAGEM TODA COMO UMA ÚNICA STRING --> ADD NA FILA (FIFO) DE COMANDOS
     
-    if(msg.length()>3){ //CHECA FORMATO DA MENSAGEM
+    do{//O BUFFER ACABA ENVIANDO VARIOS COMANDOS CONCATENADOS --> SEPARAR E ITERAR CADA UM
+
       cmd = msg.substring(0,2);//<S1-Servo1> , <R1-RED/LED1> , <L1-LED1> , <MO-Modo de Operacao>
-      valor_cmd = msg.substring(3); //EX msg = S1#75 --> valor_cmd = 75
 
       esperaAtualizacao = 600000; // SETA TIMER DE 1O MIN PARA CONTINUAR NO ESTADO SETADO PELO COMANDO
       esperaAtualizacaoVar=tempoExec;
       
       if(cmd == "S1"){ //SERVO MOTOR1
+         valor_cmd = msg.substring(3,5); //EX msg = S1#75 --> valor_cmd = 75
          SetarPosicaoEscotilha(valor_cmd.toInt());
+         msg=msg.substring(5); //LIMPA O ESSE COMANDO DO BUFFER --> FILA FIFO
       }else if(cmd == "R1"){//INTENSIDADE DO VERMELHO NO LED1
+         valor_cmd = msg.substring(3,6); //EX msg = R1#099 --> valor_cmd = 99
          analogWrite(Vermelho_LED2, 255-valor_cmd.toInt());
          RedLEDSIntensidades[1]=valor_cmd.toInt();
+         msg=msg.substring(6);
       }else if(cmd == "G1"){
+         valor_cmd = msg.substring(3,6); 
          analogWrite(Verde_LED2, 255-valor_cmd.toInt());
          GreenLEDSIntensidades[0]=valor_cmd.toInt();
+         msg=msg.substring(6);
       }else if(cmd == "B1"){
+         valor_cmd = msg.substring(3,6);
          analogWrite(Azul_LED2, 255-valor_cmd.toInt());
          BlueLEDSIntensidades[1]=valor_cmd.toInt();
+         msg=msg.substring(6);
       }else if(cmd == "R2"){
+         valor_cmd = msg.substring(3,6);
          //analogWrite(Vermelho_LED1, valor_cmd.toInt());
          digitalWrite(Vermelho_LED1, valor_cmd.toInt()>0?LOW:HIGH);
          RedLEDSIntensidades[0]=valor_cmd.toInt()>0?255:0;
+         msg=msg.substring(6);
       }else if(cmd == "B2"){
+         valor_cmd = msg.substring(3,6);
          digitalWrite(Azul_LED1, valor_cmd.toInt()==0?HIGH:LOW);
          BlueLEDSIntensidades[0]=valor_cmd.toInt();
+         msg=msg.substring(6);
       }else if(cmd == "R3"){
+         valor_cmd = msg.substring(3,6);
          digitalWrite(Vermelho_LED3, valor_cmd.toInt()==0?HIGH:LOW);
          RedLEDSIntensidades[2]=valor_cmd.toInt();
+         msg=msg.substring(6);
       }else if(cmd == "B3"){
+         valor_cmd = msg.substring(3,6);
          //analogWrite(Azul_LED3, valor_cmd.toInt());
          digitalWrite(Azul_LED3, valor_cmd.toInt()>0?LOW:HIGH);
          BlueLEDSIntensidades[2]=valor_cmd.toInt()>0?255:0;
+         msg=msg.substring(6);
       }else if(cmd == "L1"){//LIGAR/DESLIGAR LED1
-         analogWrite(Vermelho_LED2, valor_cmd=="false"?255:0);
-         analogWrite(Verde_LED2, valor_cmd=="false"?255:0);
-         analogWrite(Azul_LED2, valor_cmd=="false"?255:0);
-         RedLEDSIntensidades[1]=(valor_cmd=="false"?0:255);
-         GreenLEDSIntensidades[0]=(valor_cmd=="false"?0:255);
-         BlueLEDSIntensidades[1]=(valor_cmd=="false"?0:255);
+         valor_cmd = msg.substring(3,4); //EX msg = L1#0 --> valor_cmd = 0
+         analogWrite(Vermelho_LED2, valor_cmd=="0"?255:0);
+         analogWrite(Verde_LED2, valor_cmd=="0"?255:0);
+         analogWrite(Azul_LED2, valor_cmd=="0"?255:0);
+         RedLEDSIntensidades[1]=(valor_cmd=="0"?0:255);
+         GreenLEDSIntensidades[0]=(valor_cmd=="0"?0:255);
+         BlueLEDSIntensidades[1]=(valor_cmd=="0"?0:255);
+         msg=msg.substring(4);
       }else if(cmd == "L2"){
-         analogWrite(Vermelho_LED1, valor_cmd=="false"?255:0);
-         digitalWrite(Azul_LED1, valor_cmd=="false"?HIGH:LOW);
-         RedLEDSIntensidades[0]=(valor_cmd=="false"?0:255);
-         BlueLEDSIntensidades[0]=(valor_cmd=="false"?0:255);
+         valor_cmd = msg.substring(3,4);
+         analogWrite(Vermelho_LED1, valor_cmd=="0"?255:0);
+         digitalWrite(Azul_LED1, valor_cmd=="0"?HIGH:LOW);
+         RedLEDSIntensidades[0]=(valor_cmd=="0"?0:255);
+         BlueLEDSIntensidades[0]=(valor_cmd=="0"?0:255);
+         msg=msg.substring(4);
       }else if(cmd == "L3"){
-         digitalWrite(Vermelho_LED3, valor_cmd=="false"?HIGH:LOW);
-         analogWrite(Azul_LED3, valor_cmd=="false"?255:0);
-         RedLEDSIntensidades[2]=(valor_cmd=="false"?0:255);
-         BlueLEDSIntensidades[2]=(valor_cmd=="false"?0:255);
+         valor_cmd = msg.substring(3,4);
+         digitalWrite(Vermelho_LED3, valor_cmd=="0"?HIGH:LOW);
+         analogWrite(Azul_LED3, valor_cmd=="0"?255:0);
+         RedLEDSIntensidades[2]=(valor_cmd=="0"?0:255);
+         BlueLEDSIntensidades[2]=(valor_cmd=="0"?0:255);
+         msg=msg.substring(4);
       }else if(cmd == "MO"){//SETAR MODO DE OPERACAO
+         valor_cmd = msg.substring(3,7); //EX msg = MO#NORM --> valor_cmd = NORM
          modo = valor_cmd;
          esperaAtualizacao = 0; // ZERA O TIMER (NÃO PRECISA PARA ESTE COMANDO) 
          esperaAtualizacaoVar = 0;
+         msg=msg.substring(7);
       }else if(cmd == "DT"){//SETAR DATA ATUAL dd/mm-hh:mm
+         valor_cmd = msg.substring(3,14); //EX msg = DT#01/05-15:33 --> valor_cmd = 01/05-15:33
          esperaAtualizacao = 0; // ZERA O TIMER (NÃO PRECISA PARA ESTE COMANDO) 
          esperaAtualizacaoVar = 0;
-         mes = valor_cmd.substring(3,5).toInt();
          dia = valor_cmd.substring(0,2).toInt();
+         mes = valor_cmd.substring(3,5).toInt();
          hora = valor_cmd.substring(6,8).toInt();
          minuto = valor_cmd.substring(9).toInt();
+         msg=msg.substring(14);
       }else if(cmd == "AT" && !UtilizaModuloBluetooth){//IMPRIMIR CONDICOES AMBIENTAIS ATUALIZADAS NO MONITOR SERIAL (SOMENTE SE NÃO ESTIVER USANDO BLUETOOTH)
+         //valor_cmd = msg.substring(3,4); //EX msg = AT#0
          ImprimirCondicoesAtuais(ParametrosAmbiente,luz_Frente,luz_Fundo);
          esperaAtualizacao = 0; // ZERA O TIMER (NÃO PRECISA PARA ESTE COMANDO) 
          esperaAtualizacaoVar = 0;
+         msg=msg.substring(4);
       }
-      else{
+      else{ //Limpar o buffer pq perdeu algum dado
+        if (!UtilizaModuloBluetooth){
+          Serial.println("Comando inexistente!");
+          MostrarMenuLoop = true;//Chamar menu no prox loop
+        }
         msg="";
         esperaAtualizacao = 0; // ZERA O TIMER (NÃO PRECISA PARA ESTE COMANDO) 
         esperaAtualizacaoVar = 0;
       }
-    }
-    else if (!UtilizaModuloBluetooth){
-      Serial.println("Comando inexistente!");
-      MostrarMenuLoop = true;//Chamar menu no prox loop
-    }
-    
-    msg = ""; // limpa a mensagem recebida
+    } while(msg.length()>2); //TEM Q EXEC TODOS OS COMANDOS ANTES DE CONTINUAR
+    msg="";
   }
-  else{msg = "";}
 
   if(tempoExec - esperaAtualizacaoVar >= esperaAtualizacao){
       esperaAtualizacaoVar=0;
       esperaAtualizacao=0;
+      //Modifica o ambiente de acordo com os dados lidos
       float* ParametrosCrescimento = RetornaParametrosCrescimento();
       SetarIluminacaoFinal(ParametrosCrescimento);
     }
 
-  if(UtilizaModuloBluetooth){
+  if(UtilizaModuloBluetooth){ //Envia os dados atuais para o app
     parametros_atuais=(String(ParametrosAmbiente[0])+'#'+String(ParametrosAmbiente[1])+'#'+String(luz_Frente)+'#'+String(luz_Fundo)+
     '#'+String(RedLEDSIntensidades[0])+'#'+String(GreenLEDSIntensidades[0])+'#'+String(BlueLEDSIntensidades[0])+'#'+
     String(RedLEDSIntensidades[1])+'#'+String(BlueLEDSIntensidades[1])+'#'+String(RedLEDSIntensidades[2])+'#'
@@ -451,5 +478,5 @@ void loop()
     parametros_atuais=" ";
     }
     
-  delay(500);// Para nao ficar analisando com tanta frequencia
+  delay(100);// Para nao ficar analisando com tanta frequencia
 }
