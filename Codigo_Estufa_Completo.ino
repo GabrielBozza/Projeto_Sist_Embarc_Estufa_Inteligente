@@ -8,13 +8,13 @@
 #define LDR_POS2 A1 // Sensor de luminosidade na posicao 2 (FUNDO) --> ANALÓGICO
 
 ///****************ARRUMAR NUMMEROS DOSPINOS ANTES DE USAR*************
-#define Vermelho_LED2 6
-#define Azul_LED2 3
+#define Vermelho_LED2 3
+#define Azul_LED2 6
 #define Verde_LED2 5
 #define Vermelho_LED1 12
 #define Azul_LED1 8
-#define Vermelho_LED3 7
-#define Azul_LED3 4
+#define Vermelho_LED3 4
+#define Azul_LED3 7
 
 //LED 1 --> FRENTE
 //LED 2 --> MEIO
@@ -33,8 +33,8 @@ int pos=0; // Posição atual do Servo
 
 //--Variaveis para determinar a data, hora e estacao do ano atuais
 unsigned long esperaAtualizacao=0,minMil=60000;// mesMil=262800000,diaMil=86400000,horaMil=3600000,minMil=60000; //em milisegundos
-unsigned long esperaAtualizacaoVar=0,minMilVar=60000;//mesMilVar=262800000,diaMilVar=86400000,horaMilVar=3600000,minMilVar=60000; //em milisegundos
-int mes=5,dia=20,hora=15,minuto=33; 
+unsigned long esperaAtualizacaoVar=0,minMilVar=0;//mesMilVar=262800000,diaMilVar=86400000,horaMilVar=3600000,minMilVar=60000; //em milisegundos
+int mes=5,dia=20,hora=5,minuto=58; 
 int estacao_ano = 1;// (VERAO,OUTONO,INVERNO,PRIMAVERA)= (0,1,2,3)
 
 int RedLEDSIntensidades[] = {0,0,0};
@@ -111,6 +111,8 @@ String msg,cmd,valor_cmd,parametros_atuais = "";
 
   void SetarPosicaoEscotilha(int abertura){ // abertura --> valor em GRAUS da abertura desejada (-90 a 90 graus) 
  
+  //abertura=abertura+90;
+  abertura=180-abertura;
   int posicaoAtual = motor.read();
   abertura = floor(abertura*(1.0+5.0/90.0)); //AJUSTA VALOR PARA CONSIDERAR O ERRO DO MOTOR
  
@@ -199,7 +201,7 @@ int RetornaCondicoesLuminosidade(byte Pino){
   float Umidade = DadosDHT[1];
 
   //LED DE ANODO COMUM --> TEM QUE INVERTER A INTENSIDADE
-  if((hora >= hora_ligar && minuto >= min_ligar) && ((hora < hora_desligar)|| (hora = hora_desligar && minuto < min_desligar))){
+  if((hora >= hora_ligar && minuto >= min_ligar) && ((hora < hora_desligar)|| (hora == hora_desligar && minuto < min_desligar))){
     analogWrite(Vermelho_LED2, 255-floor(ParametrosCrescimento[2]*(1.0-(((float)LDRintensidades[0]+(float)LDRintensidades[1])/2046.0))));
     RedLEDSIntensidades[1]=floor(ParametrosCrescimento[2]*(1.0-(((float)LDRintensidades[0]+(float)LDRintensidades[1])/2046.0)));
     analogWrite(Verde_LED2, 255-floor(ParametrosCrescimento[3]*(1.0-(((float)LDRintensidades[0]+(float)LDRintensidades[1])/2046.0))));
@@ -471,8 +473,8 @@ void loop()
 
   if(UtilizaModuloBluetooth){ //Envia os dados atuais para o app
     parametros_atuais=(String(ParametrosAmbiente[0])+'#'+String(ParametrosAmbiente[1])+'#'+String(luz_Frente)+'#'+String(luz_Fundo)+
-    '#'+String(RedLEDSIntensidades[0])+'#'+String(GreenLEDSIntensidades[0])+'#'+String(BlueLEDSIntensidades[0])+'#'+
-    String(RedLEDSIntensidades[1])+'#'+String(BlueLEDSIntensidades[1])+'#'+String(RedLEDSIntensidades[2])+'#'
+    '#'+String(RedLEDSIntensidades[1])+'#'+String(GreenLEDSIntensidades[0])+'#'+String(BlueLEDSIntensidades[1])+'#'+
+    String(RedLEDSIntensidades[0])+'#'+String(BlueLEDSIntensidades[0])+'#'+String(RedLEDSIntensidades[2])+'#'
     +String(BlueLEDSIntensidades[2])+'#'+modo+'#'+String(motor.read())+'#'+String(dia)+'#'+String(mes)+'#'+String(hora)+'#'+String(minuto)+'#'+String(estacao_ano));
     Serial.println(parametros_atuais); // Envia mensagem para aplcativo android
     parametros_atuais=" ";
