@@ -299,9 +299,7 @@ void setup ()
 }
  
 void loop()
-{
-  //FALTA ENVIAR A DATA E HORA PELO APP
-  
+{ 
   //Atualiza a data e hora
   unsigned long tempoExec = millis(); //Numero de milisegundos desde que comecou a exec o programa
   
@@ -327,15 +325,7 @@ void loop()
      }  
     }
       minMilVar = tempoExec;
-    }  
-
-    if(FlagAjustaMilVars && !UtilizaModuloBluetooth){
-      FlagAjustaMilVars = false;
-      mes>1?mes-=1:mes=12;
-      dia>1?dia-=1:dia=30;
-      hora>0?hora-=1:hora=23;
-      minuto>0?minuto-=1:minuto=59;
-  }  
+    }   
 
   //MOSTRAR MENU INICIAL CASO SEJA NECESSARIO
   if(MostrarMenuLoop && !UtilizaModuloBluetooth)ImprimirMenu();
@@ -361,7 +351,7 @@ void loop()
 
       cmd = msg.substring(0,2);//<S1-Servo1> , <R1-RED/LED1> , <L1-LED1> , <MO-Modo de Operacao>
 
-      esperaAtualizacao = 600000; // SETA TIMER DE 1O MIN PARA CONTINUAR NO ESTADO SETADO PELO COMANDO
+      esperaAtualizacao = 600000; // SETA TIMER DE 1O MIN PARA CONTINUAR NO ESTADO SETADO PELO COMANDO--> USUARIO TEM PRIORIDADE PARA ESCOLHER OS PARAMETROS
       esperaAtualizacaoVar=tempoExec;
       
       if(cmd == "S1"){ //SERVO MOTOR1
@@ -463,12 +453,12 @@ void loop()
     msg="";
   }
 
-  if(tempoExec - esperaAtualizacaoVar >= esperaAtualizacao){
-      esperaAtualizacaoVar=0;
+  if(tempoExec - esperaAtualizacaoVar >= esperaAtualizacao){//checa o valor do timer
+      esperaAtualizacaoVar=0;//zera o timer
       esperaAtualizacao=0;
       //Modifica o ambiente de acordo com os dados lidos
       float* ParametrosCrescimento = RetornaParametrosCrescimento();
-      SetarIluminacaoFinal(ParametrosCrescimento);
+      SetarIluminacaoFinal(ParametrosCrescimento);//funcao principal
     }
 
   if(UtilizaModuloBluetooth){ //Envia os dados atuais para o app
